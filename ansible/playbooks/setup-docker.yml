@@ -1,0 +1,22 @@
+---
+- name: Set-up Docker
+  hosts: all
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Install docker + docker-compose
+      ansible.builtin.include_role:
+        name: geerlingguy.docker
+
+    - name: Docker Python wrapper
+      ansible.builtin.apt:
+        name: python3-docker
+        state: present
+
+    - name: Add ansible user to docker group
+      shell: "usermod -aG docker <user-name>"
+
+    - name: Reload service docker, in all cases
+      ansible.builtin.service:
+        name: docker
+        state: restarted

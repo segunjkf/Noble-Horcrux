@@ -1,0 +1,39 @@
+FROM golang:1.22.7-bullseye AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y make bash \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clone specific version of Noble
+RUN git clone https://github.com/noble-assets/noble.git . \
+    && git checkout v8.0.0-rc.4 \
+    && make install
+
+FROM ubuntu:20.04 AS lotus-base
+
+# Install required dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    ca-certificates \
+    jq \
+    wget \
+    lz4 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the compiled binary from the builder stage
+COPY --from=builder /go/bin/nobled /usr/local/bin/nobled
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Create noble directory
+RUN mkdir -p /root/.noble
+
+# Expose ports
+EXPOSE 26656 26657 1317 9090
+
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+CMD ["nobled", "start"]
+

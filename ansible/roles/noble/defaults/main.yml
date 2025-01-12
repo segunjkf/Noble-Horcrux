@@ -1,8 +1,8 @@
 #SPDX-License-Identifier: MIT-0
 ---
 noble_snapshot_url: "https://snapshots.polkachu.com/testnet-snapshots/noble/noble_21243717.tar.lz4"
-noble_user: ubuntu 
-noble_group: ubuntu
+noble_user: root
+noble_group: root
 noble_container_name: noble-node
 noble_image_name: noble-node:latest
 noble_moniker: "testnet-noble"
@@ -10,11 +10,7 @@ noble_home_dir: "/home/noble"
 noble_data_dir: "{{ noble_home_dir }}/noble_data"
 noble_container_data_dir: "{{ noble_data_dir }}/data"
 noble_config_dir: "{{ noble_data_dir }}/config"
-noble_exposed_ports:
-  - "26656:26656"
-  - "26657:26657"
-  - "1317:1317"
-  - "9090:9090"
+
 horcrux_node_address: ""
 priv_validator_key_src: ""
 

@@ -1,6 +1,6 @@
 ---
 - name: Set-up Docker
-  hosts: noble
+  hosts: all
   become: true
   gather_facts: true
   tasks:

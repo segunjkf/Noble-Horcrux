@@ -4,7 +4,6 @@
   file:
     path: "{{ item }}"
     state: directory
-    mode: '0755'
   with_items:
     - "{{ noble_home_dir }}"
     - "{{ noble_data_dir }}"

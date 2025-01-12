@@ -4,7 +4,8 @@
   become: true
   gather_facts: true
   vars:
-    priv_validator_key_src: /Users/user/Desktop/tech/tech-interview/ZKV/ansible/validator_key/priv_validator_key.json
+    priv_validator_key_src: ../validator_key/priv_validator_key.json
     noble_full_node: "{{ hostvars['noble-node'].ansible_host }}"
+    horcrux_fresh_sync: true
   roles:
     - "../roles/horcrux"

@@ -1,6 +1,6 @@
 #SPDX-License-Identifier: MIT-0
 ---
-noble_snapshot_url: "https://snapshots.polkachu.com/testnet-snapshots/noble/noble_21243717.tar.lz4"
+noble_snapshot_url: "https://snapshots.polkachu.com/testnet-snapshots/noble/noble_21313250.tar.lz4"
 noble_user: root
 noble_group: root
 noble_container_name: noble-node
@@ -15,3 +15,4 @@ horcrux_node_address: ""
 priv_validator_key_src: ""
 
 seeds: ""
+noble_fresh_sync: false

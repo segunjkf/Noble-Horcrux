@@ -4,8 +4,14 @@
 MONIKER="${MONIKER:-testnet-noble-node}"
 CHAIN_ID="${CHAIN_ID:-grand-1}"
 GENESIS_URL="${GENESIS_URL:-https://raw.githubusercontent.com/strangelove-ventures/noble-networks/main/testnet/grand-1/genesis.json}"
-# Make snapshot URL optional
 SNAPSHOT_URL="${SNAPSHOT_URL:-}"
+RUN_NODE="${RUN_NODE:-TRUE}"
+
+if [ "$RUN_NODE" = "FALSE" ]; then
+    nobled init ${MONIKER} --chain-id ${CHAIN_ID} --home=/tmp/noble > /dev/null 2>&1
+    cat /tmp/noble/config/priv_validator_key.json
+    exit 0
+fi
 
 # If config doesn't exist, run init steps
 if [ ! -f "$HOME/.noble/config/genesis.json" ]; then
@@ -13,12 +19,6 @@ if [ ! -f "$HOME/.noble/config/genesis.json" ]; then
     
     # Install lz4 if not already installed
     apt-get update && apt-get install -y lz4 wget jq
-
-    if [ ! -f "$HOME/.noble/config/priv_validator_key.json" ]; then
-        # Initialize the node
-        nobled init "$MONIKER" --chain-id grand-1
-
-    fi
 
     # Download genesis file
     curl -sSL "$GENESIS_URL" -o "$HOME/.noble/config/genesis.json"
@@ -96,4 +96,3 @@ fi
 
 # Execute the main process
 exec "$@"
-

@@ -1,5 +1,25 @@
 ---
 # tasks file for ansible/noble
+
+- name: Stop noble container before fresh sync
+  community.docker.docker_container:
+    name: "{{ noble_container_name }}"
+    state: stopped
+  when: noble_fresh_sync | bool
+  become: true
+
+- name: Clear Noble data directories for fresh sync
+  file:
+    path: "{{ item }}"
+    state: absent
+  with_items:
+    - "{{ noble_home_dir }}"
+    - "{{ noble_data_dir }}"
+    - "{{ noble_config_dir }}"
+    - "{{ noble_container_data_dir }}"
+  when: noble_fresh_sync | bool
+  become: true
+
 - name: Create Noble directory
   file:
     path: "{{ item }}"
@@ -24,63 +44,38 @@
     - "{{ noble_config_dir }}"
     - "{{ noble_container_data_dir }}"
 
-- name: Copy priv_validator_key.json for Horcrux
-  copy:
-    src: "{{ priv_validator_key_src }}"
-    dest: "{{ noble_config_dir }}/grand-1_priv_validator_key.json"
-    mode: "0600"
-    remote_src: no 
-  when: priv_validator_key_src is defined
-
-
 - name: Set up Dockerfile
   template:
     src: "Dockerfile.j2"
     dest: "{{ noble_home_dir }}/Dockerfile"
+  notify:
+    - Build Noble Docker image  
 
 - name: Set up start-noble.sh
   template:
     src: "configure-noble.sh.j2"
     dest: "{{ noble_home_dir }}/configure-noble.sh"
+  notify:
+    - Build Noble Docker image
 
 - name: Set up config.toml
   template:
     src: "config.toml.j2"
     dest: "{{ noble_config_dir }}/config.toml"
+  notify:
+    - Restart Noble container
 
 - name: set up client.toml
   template:
     src: "client.toml.j2"
     dest: "{{ noble_config_dir }}/client.toml"
+  notify:
+    - Restart Noble container
 
 - name: set up app.toml
   template:
     src: "app.toml.j2"
     dest: "{{ noble_config_dir }}/app.toml"
-
-
-- name: Build noble Docker image
-  community.docker.docker_image:
-    name: "{{ noble_image_name }}"
-    source: build
-    build:
-      path: "{{ noble_home_dir }}"
-    state: present
-
-- name: Run Noble container
-  docker_container:
-    name: "{{ noble_container_name }}"
-    image: "{{ noble_image_name }}"
-    state: started
-    recreate: yes
-    volumes:
-      - "{{ noble_data_dir }}/config:/root/.noble/config"
-      - "{{ noble_data_dir }}/data:/root/.noble/data"
- 
-    env:
-      MONIKER: "{{ noble_moniker }}"
-      SNAPSHOT_URL: "{{ noble_snapshot_url }}"
-    network_mode: host  
-    restart_policy: unless-stopped
-  become: true
+  notify:
+    - Restart Noble container  
 

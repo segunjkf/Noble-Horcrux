@@ -10,3 +10,5 @@ horcrux_container_name: horcrux-signer
 priv_validator_state_src: ""
 priv_validator_key_src: ""
 
+horcrux_fresh_sync: false
+

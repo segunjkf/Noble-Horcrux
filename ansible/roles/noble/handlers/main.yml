@@ -1,0 +1,28 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for ansible/noble
+- name: Build Noble Docker image
+  community.docker.docker_image:
+    name: "{{ noble_image_name }}"
+    source: build
+    build:
+      path: "{{ noble_home_dir }}"
+    state: present
+  notify:
+    - Restart Noble container
+
+- name: Restart Noble container
+  community.docker.docker_container:
+    name: "{{ noble_container_name }}"
+    image: "{{ noble_image_name }}"
+    state: started
+    recreate: yes
+    volumes:
+      - "{{ noble_data_dir }}/config:/root/.noble/config"
+      - "{{ noble_data_dir }}/data:/root/.noble/data"
+    env:
+      MONIKER: "{{ noble_moniker }}"
+      SNAPSHOT_URL: "{{ noble_snapshot_url }}"
+    network_mode: host
+    restart_policy: unless-stopped
+  become: true

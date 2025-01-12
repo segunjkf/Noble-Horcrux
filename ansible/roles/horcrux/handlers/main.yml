@@ -1,3 +1,27 @@
 #SPDX-License-Identifier: MIT-0
 ---
 # handlers file for ansible/horcrux
+
+- name: Build Horcrux Docker image
+  community.docker.docker_image:
+    name: "{{ horcrux_image }}"
+    source: build
+    build:
+      path: "{{ horcrux_signer_dir }}"
+    state: present
+  notify:
+    - Restart Horcrux container
+
+- name: Restart Horcrux container
+  community.docker.docker_container:
+    name: horcrux-signer
+    image: my-horcrux:latest
+    state: started
+    recreate: yes
+    volumes:
+      - "{{ horcrux_signer_dir }}/horcrux:/root/.horcrux:rw"
+    entrypoint: "/bin/sh"
+    command: "-c 'rm -f /root/.horcrux/horcrux.pid && horcrux start --accept-risk'"
+    network_mode: host
+    restart_policy: unless-stopped
+

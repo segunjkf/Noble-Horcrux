@@ -1,6 +1,6 @@
 ---
 - name: Set-up Docker
-  hosts: all
+  hosts: noble
   become: true
   gather_facts: true
   tasks:
@@ -14,7 +14,7 @@
         state: present
 
     - name: Add ansible user to docker group
-      shell: "usermod -aG docker <user-name>"
+      shell: "usermod -aG docker {{ ansible_ssh_user }}"
 
     - name: Reload service docker, in all cases
       ansible.builtin.service:

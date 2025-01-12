@@ -13,10 +13,13 @@ if [ ! -f "$HOME/.noble/config/genesis.json" ]; then
     
     # Install lz4 if not already installed
     apt-get update && apt-get install -y lz4 wget jq
-    
-    # Initialize the node
-    nobled init "$MONIKER" --chain-id grand-1
-    
+
+    if [ ! -f "$HOME/.noble/config/priv_validator_key.json" ]; then
+        # Initialize the node
+        nobled init "$MONIKER" --chain-id grand-1
+
+    fi
+
     # Download genesis file
     curl -sSL "$GENESIS_URL" -o "$HOME/.noble/config/genesis.json"
     
@@ -58,13 +61,6 @@ if [ ! -f "$HOME/.noble/config/genesis.json" ]; then
         "timestamp": "9223372036854775808"
     }' "$GENESIS_FILE" > "$GENESIS_FILE.tmp" && mv "$GENESIS_FILE.tmp" "$GENESIS_FILE"
 
-    SEEDS="ade4d8bc8cbe014af6ebdf3cb7b1e9ad36f412c0@testnet-seeds.polkachu.com:21556"
-    
-    sed -i.bak -E "s|^(seeds[[:space:]]+=[[:space:]]+).*$|\1\"$SEEDS\"|" "$CONFIG_FILE"
-
-    sed -i.bak \
-    's|laddr = "tcp://127.0.0.1:26657"|laddr = "tcp://0.0.0.0:26657"|' \
-    "$CONFIG_FILE"
 
     # Set pruning configuration
     APP_CONFIG="$HOME/.noble/config/app.toml"

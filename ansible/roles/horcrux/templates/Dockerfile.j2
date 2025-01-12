@@ -1,0 +1,31 @@
+FROM golang:1.21-alpine3.18 AS builder
+
+RUN apk add --no-cache \
+    gcc \
+    git \
+    make \
+    musl-dev
+
+# Clone and build Horcrux
+ARG HORCRUX_VERSION=v3.0.0
+RUN git clone https://github.com/strangelove-ventures/horcrux.git && \
+    cd horcrux && \
+    git checkout ${HORCRUX_VERSION} && \
+    make build
+
+FROM alpine:3.18
+
+RUN apk add --no-cache \
+    bash \
+    curl \
+    jq
+
+# Copy binary from builder
+COPY --from=builder /go/horcrux/build/horcrux /usr/local/bin/
+
+# Create Horcrux directories
+RUN mkdir -p /root/.horcrux/state
+
+ENTRYPOINT ["horcrux"]
+CMD ["start"]
+

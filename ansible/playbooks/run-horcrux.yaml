@@ -1,0 +1,10 @@
+---
+- name: Set-up horcrux
+  hosts: horcrux
+  become: true
+  gather_facts: true
+  vars:
+    priv_validator_key_src: /Users/user/Desktop/tech/tech-interview/ZKV/ansible/validator_key/priv_validator_key.json
+    noble_full_node: "{{ hostvars['noble-node'].ansible_host }}"
+  roles:
+    - "../roles/horcrux"

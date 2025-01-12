@@ -1,0 +1,60 @@
+#SPDX-License-Identifier: MIT-0
+---
+- name: Ensure horcrux_signer_dir exists
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ horcrux_signer_dir }}"
+    - "{{ horcrux_signer_dir }}/horcrux"
+    - "{{ horcrux_signer_dir }}/horcrux/state"
+
+- name: Copy priv_validator_key.json for Horcrux
+  copy:
+    src: "{{ priv_validator_key_src }}"
+    dest: "{{ horcrux_signer_dir }}/horcrux/priv_validator_key.json"
+    mode: "0600"
+    remote_src: no 
+  when: priv_validator_key_src is defined
+
+# - name: Copy priv_validator_state.json for Horcrux
+#   copy:
+#     src: "{{ priv_validator_state_src }}"
+#     dest: "{{ horcrux_signer_dir }}/horcrux/state/priv_validator_state.json"
+#     mode: "0600"
+#     remote_src: no
+#   when: priv_validator_state_src is defined
+
+- name: Template the Dockerfile
+  template:
+    src: "Dockerfile.j2"
+    dest: "{{ horcrux_signer_dir }}/Dockerfile"
+    mode: '0644'
+
+- name: Template the horcrux config file
+  template:
+    src: "config.yaml.j2"
+    dest: "{{ horcrux_signer_dir }}/horcrux/config.yaml"
+    mode: '0644'
+
+- name: Build Horcrux Docker image
+  community.docker.docker_image:
+    name: "{{ horcrux_image | default('my-horcrux') }}"
+    source: build
+    build:
+      path: "{{ horcrux_signer_dir }}"
+    state: present
+
+- name: Run horcrux container
+  docker_container:
+    name: horcrux-signer
+    image: my-horcrux:latest
+    state: started
+    recreate: yes
+    volumes:
+      - "{{ horcrux_signer_dir }}/horcrux:/root/.horcrux:rw"
+    entrypoint: "/bin/sh"
+    command: "-c 'rm -f /root/.horcrux/horcrux.pid && horcrux start --accept-risk'"
+    network_mode: host
+    restart_policy: unless-stopped

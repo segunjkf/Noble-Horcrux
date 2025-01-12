@@ -25,8 +25,8 @@ RUN apt-get update && apt-get install -y \
 COPY --from=builder /go/bin/nobled /usr/local/bin/nobled
 
 # Copy entrypoint script
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+COPY configure-noble.sh /usr/local/bin/configure-noble.sh
+RUN chmod +x /usr/local/bin/configure-noble.sh
 
 # Create noble directory
 RUN mkdir -p /root/.noble
@@ -34,6 +34,6 @@ RUN mkdir -p /root/.noble
 # Expose ports
 EXPOSE 26656 26657 1317 9090
 
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT ["/usr/local/bin/configure-noble.sh"]
 CMD ["nobled", "start"]
 

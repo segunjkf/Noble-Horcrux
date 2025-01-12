@@ -1,0 +1,87 @@
+---
+# tasks file for ansible/noble
+- name: Create Noble directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - "{{ noble_home_dir }}"
+    - "{{ noble_data_dir }}"
+    - "{{ noble_config_dir }}"
+    - "{{ noble_container_data_dir }}"
+
+- name: Modify permissions to match user-group inside docker image
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ noble_user }}"
+    group: "{{ noble_group }}"
+    recurse: true
+    mode: "0700"
+  with_items:
+    - "{{ noble_home_dir }}"
+    - "{{ noble_data_dir }}"
+    - "{{ noble_config_dir }}"
+    - "{{ noble_container_data_dir }}"
+
+- name: Copy priv_validator_key.json for Horcrux
+  copy:
+    src: "{{ priv_validator_key_src }}"
+    dest: "{{ noble_config_dir }}/grand-1_priv_validator_key.json"
+    mode: "0600"
+    remote_src: no 
+  when: priv_validator_key_src is defined
+
+
+- name: Set up Dockerfile
+  template:
+    src: "Dockerfile.j2"
+    dest: "{{ noble_home_dir }}/Dockerfile"
+
+- name: Set up start-noble.sh
+  template:
+    src: "configure-noble.sh.j2"
+    dest: "{{ noble_home_dir }}/configure-noble.sh"
+
+- name: Set up config.toml
+  template:
+    src: "config.toml.j2"
+    dest: "{{ noble_config_dir }}/config.toml"
+
+- name: set up client.toml
+  template:
+    src: "client.toml.j2"
+    dest: "{{ noble_config_dir }}/client.toml"
+
+- name: set up app.toml
+  template:
+    src: "app.toml.j2"
+    dest: "{{ noble_config_dir }}/app.toml"
+
+
+- name: Build noble Docker image
+  community.docker.docker_image:
+    name: "{{ noble_image_name }}"
+    source: build
+    build:
+      path: "{{ noble_home_dir }}"
+    state: present
+
+- name: Run Noble container
+  docker_container:
+    name: "{{ noble_container_name }}"
+    image: "{{ noble_image_name }}"
+    state: started
+    recreate: yes
+    volumes:
+      - "{{ noble_data_dir }}/config:/root/.noble/config"
+      - "{{ noble_data_dir }}/data:/root/.noble/data"
+ 
+    env:
+      MONIKER: "{{ noble_moniker }}"
+      SNAPSHOT_URL: "{{ noble_snapshot_url }}"
+    network_mode: host  
+    restart_policy: unless-stopped
+  become: true
+

@@ -1,0 +1,12 @@
+#SPDX-License-Identifier: MIT-0
+---
+horcrux_signer_dir: "/home/horcrux-signer"
+noble_full_node: ""
+# Horcrux version to build
+horcrux_version: "v3.0.0"
+horcrux_image: "my-horcrux:latest"
+current_block_height: "21287666"
+horcrux_container_name: horcrux-signer
+priv_validator_state_src: ""
+priv_validator_key_src: ""
+

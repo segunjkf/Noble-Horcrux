@@ -97,8 +97,6 @@ Expected output shows:
 1. Noble Node (`config.toml`):
 ```toml
 # Remote signing configuration
-priv_validator_key_file = ""
-priv_validator_state_file = ""
 priv_validator_laddr = "tcp://0.0.0.0:1234"
 ```
 
@@ -167,7 +165,7 @@ While a monitoring stack is not deployed, the following steps outline how monito
 
 ### 1. Verify Node Synchronization
 
-Ensure your node is fully synchronized with the network. You can check the synchronization status by querying a specific block height:
+Ensure the node is fully synchronized with the network. You can check the synchronization status by querying a specific block height:
 
 ```bash
 curl http://<ip>:26657/block?height=<block-height>

@@ -1,4 +1,3 @@
-# Noble-Horcrux
 # Noble Node with Remote Horcrux Signer Setup
 
 This guide documents the setup of a Noble testnet node with Horcrux remote signing capability using Ansible and Docker.
@@ -56,13 +55,13 @@ docker run -it --rm \
 ### 2. Install Docker
 Run the Docker installation playbook:
 ```bash
-ansible-playbook -i hosts.ini playbooks/setup-docker.yml
+ansible-playbook hosts.ini playbooks/setup-docker.yml
 ```
 
 ### 3. Setup Horcrux Signer
 Deploy Horcrux on the signer node:
 ```bash
-ansible-playbook -i hosts.ini playbooks/run-horcrux.yaml
+ansible-playbook  playbooks/run-horcrux.yaml
 ```
 
 Key configurations:
@@ -73,7 +72,7 @@ Key configurations:
 ### 4. Setup Noble Node
 Deploy the Noble node:
 ```bash
-ansible-playbook -i hosts.ini playbooks/run-noble.yml
+ansible-playbook hosts.ini playbooks/run-noble.yml
 ```
 
 Key configurations:
@@ -131,38 +130,148 @@ debugAddr: ""
 - Horcrux:
   - Outbound: 1234 (to Noble node)
 
-## Monitoring Recommendations
+## Monitoring the Node
 
-1. Node Health Metrics:
-- Block height and sync status
-- Peer count and network connectivity
-- System resources (CPU, memory, disk)
+While a monitoring stack is not deployed, the following steps outline how monitoring can be approached to ensure the node’s health and alert engineers of any issues:
 
-2. Signing Operations:
-- Successful/failed signing attempts
-- Horcrux-Noble connection status
-- Signing latency
+### Key Metrics to Monitor
+
+- Node Health
+
+    - Block Height: Ensure the node's block height is in sync with the latest chain height.
+    - Peer Count: Monitor the number of connected peers to verify proper network connectivity.
+    - CPU/Memory Usage: Track resource utilization to identify bottlenecks or under-provisioned hardware.
+    - Disk Space: Ensure sufficient disk space is available for node operation.
+
+- Horcrux Signer
+
+    - Signing Operations: Monitor successful/failed signing attempts and signing latency.
+    - Network Connectivity: Verify that the Horcrux node maintains a stable connection to the full node.
+
+- System Health
+
+    - Track system logs for anomalies.
+    - Monitor uptime and ensure no unplanned reboots.
+
+- Alerting Recommendations
+    - Configure alerts for:
+        - Block height discrepancies.
+        - Peer count dropping below a threshold (e.g., fewer than 5 peers).
+        - Signing failures or latency exceeding a predefined threshold.
+        - Disk usage exceeding 80%.
+        - Use tools like Prometheus (for metrics collection) with 
+        - Alertmanager to send alerts via email, Slack, or PagerDuty.
+
+## Steps to Create a Validator from this point
+
+
+### 1. Verify Node Synchronization
+
+Ensure your node is fully synchronized with the network. You can check the synchronization status by querying a specific block height:
+
+```bash
+curl http://<ip>:26657/block?height=<block-height>
+```
+
+Replace `<block-height>` with a recent block number. A valid response indicates successful synchronization.
+
+### 2. Create a Wallet
+
+Generate a new key for your wallet:
+
+```bash
+nobled keys add <key_name> --keyring-backend file --algo eth_secp256k1
+```
+
+Replace `<key_name>` with the desired key name. Retrieve your wallet address:
+
+```bash
+MY_ADDRESS=$(nobled keys show <key_name> -a --keyring-backend file)
+echo $MY_ADDRESS
+```
+
+### 3. Fund Your Wallet
+
+we need to ensure the wallet has sufficient funds to cover the staking amount and transaction fees. we can get testnet token from [circle](https://faucet.circle.com/)
+
+### 4. Create the Validator
+
+Generate the validator public key:
+
+```bash
+nobled tendermint show-validator
+```
+
+Create a JSON file (e.g., `validator.json`) with the following content:
+
+```json
+{
+    "pubkey": {
+        "@type": "/cosmos.crypto.ed25519.PubKey",
+        "key": "<your-validator-pubkey>"
+    },
+    "amount": "1000000utoken",
+    "moniker": "my-validator",
+    "identity": "",
+    "website": "https://example.com",
+    "security": "security@example.com",
+    "details": "A highly reliable validator.",
+    "commission-rate": "0.10",
+    "commission-max-rate": "0.20",
+    "commission-max-change-rate": "0.01",
+    "min-self-delegation": "1"
+}
+```
+
+Replace `<the-validator-pubkey>` with the output from the previous command and adjust other fields as needed.
+
+Submit the create-validator transaction:
+
+```bash
+nobled tx staking create-validator validator.json --from=<key_name> --chain-id=noble-1 --fees=1000utoken --gas=auto --keyring-backend file
+```
+
+Replace `<key_name>` with the key's name.
+
+### 5. Verify Your Validator
+
+Check if the validator has been successfully added to the validator set:
+
+```bash
+nobled query tendermint-validator-set
+```
+---
 
 ## High Availability Considerations
 
-1. Noble Node:
-- Deploy multiple sentries
-- Use load balancer for RPC endpoints
-- Regular state snapshots
+### 1. Noble Node High Availability
+- **Multiple Sentry Nodes**:
+  - Deploy multiple sentry nodes in different regions/availability zones
+  - Sentry nodes protect validator from DDoS attacks
+  - Each sentry node maintains its own peer connections
+  - Example topology: 3 sentries in different AWS regions
 
-2. Horcrux:
-- Multiple signing nodes (threshold setup)
-- Geographical distribution
-- Redundant network paths
+- **State Snapshots**:
+  - Regular automated snapshots of blockchain state
+  - Quick recovery in case of node failure
+  - Backup snapshots to secure storage (e.g., S3)
+  - Example: Daily snapshots with 7-day retention
 
-## Future Improvements
+### 2. Horcrux High Availability
+- **Threshold Signing Setup**:
+  - Deploy multiple Horcrux signers (e.g., 3-of-4 setup)
+  - Distribute signers across different regions
+  - Each signer holds a key share
+  - Continues operating if minority of signers fail
 
-1. Security Enhancements:
-- Implement key rotation procedures
-- HSM integration for key storage
-- Network segregation and VPC setup
+- **Geographical Distribution**:
+  - Place signers in different data centers
+  - Independent network paths
+  - Different cloud providers for better resilience
+  - Example: Mix of AWS, GCP, and Azure
 
-2. Operational Improvements:
-- Automated backup procedures
-- Enhanced monitoring stack
-- Disaster recovery procedures
+- **Network Redundancy**:
+  - Multiple network interfaces per signer
+  - VPN backup connections
+  - Private networking between components
+  - Fallback communication paths

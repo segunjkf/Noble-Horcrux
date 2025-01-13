@@ -247,7 +247,6 @@ nobled query tendermint-validator-set
   - Deploy multiple sentry nodes in different regions/availability zones
   - Sentry nodes protect validator from DDoS attacks
   - Each sentry node maintains its own peer connections
-  - Example topology: 3 sentries in different AWS regions
 
 - **State Snapshots**:
   - Regular automated snapshots of blockchain state
@@ -266,10 +265,4 @@ nobled query tendermint-validator-set
   - Place signers in different data centers
   - Independent network paths
   - Different cloud providers for better resilience
-  - Example: Mix of AWS, GCP, and Azure
 
-- **Network Redundancy**:
-  - Multiple network interfaces per signer
-  - VPN backup connections
-  - Private networking between components
-  - Fallback communication paths
